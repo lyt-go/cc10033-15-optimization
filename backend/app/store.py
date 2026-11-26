@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+import threading
 import time
 from typing import Any
 
@@ -20,6 +21,16 @@ class Store:
         self._service_registry: dict[str, Any] = {}
         self._metrics: dict[str, list[dict[str, Any]]] = {}
         self._event_queue: list[dict[str, Any]] = []
+
+        # 投递回执/补投申请的内存台账。键均为业务编号，服务层负责一致性。
+        self.delivery_handoffs: dict[str, dict[str, Any]] = {}
+        self.delivery_batch_index: dict[str, list[str]] = {}
+        self.redelivery_requests: dict[str, dict[str, Any]] = {}
+        self.redelivery_by_batch: dict[str, list[str]] = {}
+        self.delivery_claims: dict[str, dict[str, Any]] = {}
+        self.delivery_receipt_ids: dict[str, dict[str, Any]] = {}
+        self.delivery_idempotency: dict[str, dict[str, Any]] = {}
+        self.delivery_lock = threading.RLock()
 
     # ── 基础存取 ──────────────────────────────
 

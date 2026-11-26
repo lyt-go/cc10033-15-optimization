@@ -13,7 +13,9 @@
         <span class="head-desc">面向分布式采集任务调度、代理池管理、反封锁策略与结果质量校验的数据采集平台。</span>
         <span class="head-user">当前值班：数据工程组</span>
       </header>
-      <RouterView />
+      <RouterView v-slot="{ Component, route }">
+        <component :is="Component" :key="route.path" />
+      </RouterView>
     </main>
   </div>
 </template>

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Generic, TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
 
@@ -27,5 +27,18 @@ class EntryPayload(BaseModel):
 
 
 class ActionPayload(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     action: str
     remark: str | None = None
+    batch_id: str | int | None = None
+    handoff_id: str | int | None = None
+    request_id: str | int | None = None
+    item_id: str | int | None = None
+    item_ids: list[Any] | None = None
+    selected_item_ids: list[Any] | None = None
+    receipt_id: str | None = None
+    status: str | None = None
+    result: str | None = None
+    idempotency_key: str | None = None
+    export_id: int | str | None = None

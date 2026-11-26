@@ -38,3 +38,22 @@ def overview() -> dict[str, object]:
 # 否则固定路径会被动态路径抢先匹配。
 for module in ROUTERS:
     app.include_router(module.router)
+
+
+def seed_delivery_receipt_demo() -> None:
+    """预置题面中的四项部分签收交接，便于页面直接核对完整流程。"""
+    from app.services import SERVICES
+
+    delivery = SERVICES["delivery_pipe"]
+    if delivery.list_handoffs():
+        return
+    delivery.create_four_item_scenario(
+        entry_id=3,
+        export_id=3,
+        batch_id="BATCH-PARTIAL-4",
+        operator="交接员",
+        remark="两项已签收、一项明确失败、一项确认未知",
+    )
+
+
+seed_delivery_receipt_demo()

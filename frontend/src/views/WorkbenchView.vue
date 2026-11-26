@@ -15,6 +15,9 @@
       </div>
     </header>
 
+    <DeliveryPanel v-if="meta.key === 'delivery_pipe'" ref="deliveryPanelRef" />
+    <ExportTracePanel v-if="meta.key === 'export_dataset'" ref="exportTracePanelRef" />
+
     <div class="stat-row">
       <article v-for="item in stats" :key="item.label" class="stat-card">
         <span class="stat-label">{{ item.label }}</span>
@@ -51,6 +54,24 @@
           <td>{{ row.status }}</td>
           <td class="row-actions">
             <button
+              v-if="meta.key === 'delivery_pipe'"
+              class="link"
+              type="button"
+              :data-testid="`partial-detail-${row.id}`"
+              @click="openPartialDetail(row)"
+            >
+              部分签收详情
+            </button>
+            <button
+              v-if="meta.key === 'export_dataset'"
+              class="link"
+              type="button"
+              :data-testid="`export-trace-${row.id}`"
+              @click="openExportTrace(row)"
+            >
+              补投追溯
+            </button>
+            <button
               v-for="action in meta.actions"
               :key="action"
               class="link"
@@ -73,9 +94,9 @@
     <div v-if="showCreate" class="modal-backdrop" data-testid="create-modal">
       <form class="modal" @submit.prevent="submitCreate">
         <h3>登记{{ meta.entity }}</h3>
-        <label v-for="field in meta.fields" :key="field" class="create-field">
+        <label v-for="(field, index) in meta.fields" :key="field" class="create-field">
           <span>{{ field }}</span>
-          <input v-model="createValues[field]" :data-testid="`create-${field}`" required />
+          <input v-model="createValues[field]" :data-testid="`create-${field}`" :required="index < 3" />
         </label>
         <div class="page-actions">
           <button class="btn" type="button" @click="showCreate = false">取消</button>
@@ -104,6 +125,8 @@ import {
   runAction as applyAction,
 } from '@/api/backend-service'
 import type { EntryRow } from '@/data/types'
+import DeliveryPanel from '@/components/DeliveryPanel.vue'
+import ExportTracePanel from '@/components/ExportTracePanel.vue'
 
 const props = defineProps<{ moduleKey: string }>()
 const meta = moduleMeta(props.moduleKey)
@@ -115,6 +138,8 @@ const filterFields = meta.fields.slice(0, 3)
 const showCreate = ref(false)
 const creating = ref(false)
 const createValues = ref<Record<string, string>>({})
+const deliveryPanelRef = ref<InstanceType<typeof DeliveryPanel> | null>(null)
+const exportTracePanelRef = ref<InstanceType<typeof ExportTracePanel> | null>(null)
 const stats = computed(() => [
   { label: meta.metrics[0], value: total.value },
   { label: meta.metrics[1], value: rows.value.filter((row) => row.status === meta.statuses[1]).length },
@@ -168,12 +193,28 @@ async function submitCreate() {
 async function runAction(action: string, row: EntryRow) {
   errorMessage.value = ''
   try {
+    if (meta.key === 'delivery_pipe' && action === '申请补投') {
+      await deliveryPanelRef.value?.submitForPipe(row.id)
+      return
+    }
     const result = await applyAction(meta.key, Number(row.id), action)
     if (!result.ok) throw new Error(result.message)
     await reload()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '操作失败'
   }
+}
+
+async function openPartialDetail(row: EntryRow) {
+  await deliveryPanelRef.value?.openForPipe(row.id)
+  document.querySelector('[data-testid="partial-receipt-detail"]')
+    ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+async function openExportTrace(row: EntryRow) {
+  await exportTracePanelRef.value?.openForRow(row)
+  document.querySelector('[data-testid="export-trace-panel"]')
+    ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
 async function reload() {
